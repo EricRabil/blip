@@ -16,12 +16,14 @@ export const IdentifyAction: Action = {
             return;
         }
 
+        // check psk
         if (USE_PSK && (PSK !== psk)) {
             log.info(`socket failed psk auth for service "${name}"`);
             socket.socket.close(401, 'incorrect psk');
             return;
         }
 
+        // check or generate token
         let newToken: string;
         if (await tokenExists(name)) {
             if (!(await checkToken(name, token!))) {
