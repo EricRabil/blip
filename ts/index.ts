@@ -3,6 +3,7 @@ import http from "http";
 import express from "express";
 import cws from "@clusterws/cws";
 import log from "./log";
+import ServiceSocket from "./ws/ServiceSocket";
 
 export const {
     SERVER_PORT: port,
@@ -19,7 +20,7 @@ const httpServer = http.createServer(app);
 const websocketServer = new cws.WebSocketServer({ server: httpServer });
 
 websocketServer.on('connection', (socket) => {
-    
+    new ServiceSocket(socket);
 });
 
 httpServer.listen(port, () => {
