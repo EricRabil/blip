@@ -27,6 +27,11 @@ export default class ServiceSocket {
             const sockets = ServiceSocket.sockets;
             ServiceSocket.sockets = sockets.splice(sockets.indexOf(this));
         });
+
+        setTimeout(() => {
+            if (this.identified) return;
+            this.socket.close(401, 'authentication timeout');
+        }, 10000);
     }
 
     get ip(): string {
