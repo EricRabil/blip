@@ -8,11 +8,13 @@ import ServiceSocket from "./ws/ServiceSocket";
 export const {
     SERVER_PORT: port,
     PSK,
-    USE_PSK
+    USE_PSK,
+    TOKEN_REGISTRY_PATH
 }: {
     SERVER_PORT: number,
     PSK: string,
-    USE_PSK: boolean
+    USE_PSK: boolean,
+    TOKEN_REGISTRY_PATH: string
 } = dotenv.config().parsed as any;
 
 const app = express();

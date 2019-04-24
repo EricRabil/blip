@@ -38,6 +38,7 @@ export interface Identify {
     name: string;
     baseMetrics: Metrics;
     psk?: string;
+    token?: string;
 }
 
 /**
