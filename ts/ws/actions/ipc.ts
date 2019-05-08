@@ -10,14 +10,10 @@ export const IPCAction: Action = {
         const recipient = await ServiceSocket.findByName(to);
 
         if (!recipient) {
-            await service.send({
-                i: 'ipc',
-                d: {
-                    unknownService: true,
-                    serviceName: to,
-                    nonce
-                },
-                e: true
+            await service.sendError({
+                unknownService: true,
+                serviceName: to,
+                nonce
             });
 
             return;

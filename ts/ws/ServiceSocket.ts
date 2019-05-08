@@ -44,6 +44,19 @@ export default class ServiceSocket {
         });
     }
 
+    public sendError(d: any, forceClose: boolean = false): Promise<void> {
+        const close = forceClose || STRICT;
+        return this.send({
+            i: "debug/error",
+            d: {
+                ...d,
+                goodbye: close
+            },
+            e: true
+            // we disconnect on error to prevent error spam
+        }).then(() => (close ? this.socket.close() : Promise.resolve()));
+    }
+
     /**
      * Intake for raw socket payloads
      * @param message the socket message

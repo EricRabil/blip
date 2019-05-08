@@ -19,7 +19,9 @@ export const IdentifyAction: Action = {
         // check psk
         if (USE_PSK && (PSK !== psk)) {
             log.info(`socket failed psk auth for service "${name}"`);
-            socket.socket.close(401, 'incorrect psk');
+            await socket.sendError({
+                incorrectPSK: true
+            }, true);
             return;
         }
 
@@ -28,7 +30,9 @@ export const IdentifyAction: Action = {
         if (await tokenExists(name)) {
             if (!(await checkToken(name, token!))) {
                 log.info(`socket failed token auth for service "${name}"`)
-                socket.socket.close(401, 'incorrect token');
+                await socket.sendError({
+                    incorrectToken: true
+                }, true);
                 return;
             }
         } else {
