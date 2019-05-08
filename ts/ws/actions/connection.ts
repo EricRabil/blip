@@ -54,7 +54,7 @@ export const IdentifyAction: Action = {
         socket.identified = true;
 
         await socket.send({
-            i: 'status/connected',
+            i: 'connection/connected',
             d: {
                 newToken: newToken! || undefined
             }
