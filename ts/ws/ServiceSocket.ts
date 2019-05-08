@@ -2,6 +2,17 @@ import { WebSocket } from "@clusterws/cws";
 import { Actions, Action, ActionHandler } from "./actions";
 import log from "../log";
 import { Metrics } from "../payloads";
+import { STRICT } from "..";
+import { IdentifyAction } from "./actions/connection";
+
+function validatePayload(payload: any): payload is SocketPayload {
+    return typeof payload === "object"
+        && "i" in payload
+        && "d" in payload
+        && (
+            "e" in payload ? typeof payload.e === "boolean" : true
+        );
+}
 
 export interface SocketPayload {
     // intent
@@ -64,15 +75,49 @@ export default class ServiceSocket {
      * @param message the socket message
      */
     private async receive(message: string): Promise<void> {
-        const {i: intent, d: data} = JSON.parse(message);
+        try {
+            const payload = JSON.parse(message);
+            if (!validatePayload(payload)) {
+                // Invalid payload, kill it.
+                return;
+            }
 
-        let action;
-        if (action = Actions[intent]) {
-            await ServiceSocket.runAction(this, action, data);
-            return;
+            const {i: intent, d: data} = JSON.parse(message);
+
+            if (intent !== IdentifyAction.intent && !this.identified) {
+                // unauthenticated
+                await this.sendError({
+                    unauthenticated: true,
+                    message: "socket must identify before accessing other intents"
+                });
+                return;
+            }
+
+            let action;
+            if (action = Actions[intent]) {
+                await ServiceSocket.runAction(this, action, data);
+                return;
+            }
+
+            log.info(`invalid intent "${intent}" requested`);
+        } catch (e) {
+            if ((<Error>e).name === "SyntaxError") {
+                if (message.trim().length === 0) {
+                    log.debug("ignoring empty message from socket");
+                    return;
+                }
+
+                log.warn(`socket sent malformed payload [service-name: "${this.name}"]`)
+                await this.sendError({
+                    syntaxError: true,
+                    message: e.message
+                }, true);
+
+                return;
+            }
+
+            throw e;
         }
-
-        log.info(`invalid intent "${intent}" requested`);
     }
 
     /**
