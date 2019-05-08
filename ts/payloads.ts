@@ -23,8 +23,6 @@ export interface Metrics {
     memory: number;
     // in percent
     cpu: number;
-    url: string | null;
-    location: string | null;
     [key: string]: string | number | null;
 }
 
