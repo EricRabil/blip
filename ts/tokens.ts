@@ -20,12 +20,15 @@ interface TokenRegistry {
     [serviceName: string]: string;
 }
 
+const DataPath = path.resolve(__dirname, "data.json");
+
 async function loadTokenRegistry(): Promise<TokenRegistry> {
-    return fs.readJSON(TOKEN_REGISTRY_PATH || path.resolve(__dirname, "data.json"));
+    if (!await fs.pathExists(TOKEN_REGISTRY_PATH || DataPath)) await fs.writeJSON(TOKEN_REGISTRY_PATH || DataPath, {})
+    return fs.readJSON(TOKEN_REGISTRY_PATH || DataPath);
 }
 
 async function saveTokenRegistry(registry: TokenRegistry): Promise<void> {
-    return fs.writeJSON(TOKEN_REGISTRY_PATH || path.resolve(__dirname, "data.json"), registry);
+    return fs.writeJSON(TOKEN_REGISTRY_PATH || DataPath, registry);
 }
 
 /**
