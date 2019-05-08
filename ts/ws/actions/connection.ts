@@ -9,7 +9,14 @@ export const IdentifyAction: Action = {
     intent: "connection/identify",
     handler: async (socket, {name, baseMetrics, psk, token}: Identify) => {
         // sockets cant re-identify. they must make a new session.
-        if (socket.identified) return;
+        if (socket.identified) {
+            await socket.sendError({
+                alreadyIdentified: true,
+                message: "Socket is already identified. Establish a new connection for a new identity."
+            }, true);
+            return;
+        }
+
         if (await ServiceSocket.isNameInUse(name)) {
             socket.socket.close(400, 'name is in use.');
             log.warn(`socket failed identification beacuse it attempted to use a name in-use "${name}"`);
