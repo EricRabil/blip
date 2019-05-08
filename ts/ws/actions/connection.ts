@@ -6,7 +6,7 @@ import { USE_PSK, PSK } from "../..";
 import { tokenExists, generateToken, checkToken } from "../../tokens";
 
 export const IdentifyAction: Action = {
-    intent: "identify",
+    intent: "connection/identify",
     handler: async (socket, {name, baseMetrics, psk, token}: Identify) => {
         // sockets cant re-identify. they must make a new session.
         if (socket.identified) return;
