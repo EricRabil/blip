@@ -4,9 +4,7 @@ import ServiceSocket from "../ServiceSocket";
 
 export const IPCAction: Action = {
     intent: "ipc",
-    handler: async (service, message: IPCMessage) => {
-        const { to, nonce } = message;
-
+    handler: async (service, { to, message, nonce }: IPCMessage) => {
         const recipient = await ServiceSocket.findByName(to);
 
         if (!recipient) {
@@ -21,7 +19,11 @@ export const IPCAction: Action = {
 
         await recipient.send({
             i: 'ipc',
-            d: message
+            d: {
+                from: service.name,
+                message,
+                nonce
+            }
         });
     }
 }
