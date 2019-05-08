@@ -13,7 +13,7 @@ export interface SocketPayload {
 }
 
 export default class ServiceSocket {
-    private static sockets: ServiceSocket[] = [];
+    public static sockets: ServiceSocket[] = [];
 
     name: string;
     identified: boolean = false;
