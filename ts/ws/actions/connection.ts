@@ -18,8 +18,11 @@ export const IdentifyAction: Action = {
         }
 
         if (await ServiceSocket.isNameInUse(name)) {
-            socket.socket.close(400, 'name is in use.');
             log.warn(`socket failed identification beacuse it attempted to use a name in-use "${name}"`);
+            await socket.sendError({
+                nameInUse: true,
+                message: "That name is currently assigned to another socket. Establish a new connection with a new name, or close the existing connection."
+            }, true);
             return;
         }
 
