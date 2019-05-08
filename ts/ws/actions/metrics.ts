@@ -1,6 +1,7 @@
 import { Action } from ".";
 import { Metrics } from "../../payloads";
 import log from "../../log";
+import ServiceSocket from "../ServiceSocket";
 
 function validateMetrics(metrics: any): metrics is Metrics {
     return typeof metrics === "object"
@@ -25,5 +26,24 @@ export const MetricAction: Action = {
             return;
         }
         socket.latestMetrics = metrics;
+    }
+}
+
+/**
+ * Intent for fetching metrics
+ * 
+ * @todo restrict intent to authorized services
+ */
+export const MetricFetchAction: Action = {
+    intent: "metrics/fetch",
+    handler: async (socket) => {
+        const metrics: {
+            [key: string]: Metrics;
+        } = ServiceSocket.sockets.reduce((a, c) => (a[c.name] = c.latestMetrics) && a, {} as any);
+
+        await socket.send({
+            i: "metrics/all",
+            d: metrics
+        });
     }
 }
