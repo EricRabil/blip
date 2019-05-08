@@ -28,10 +28,12 @@ export default class ServiceSocket {
             ServiceSocket.sockets = sockets.splice(sockets.indexOf(this));
         });
 
-        setTimeout(() => {
+        setTimeout(async () => {
             if (this.identified) return;
-            this.socket.close(401, 'authentication timeout');
-        }, 10000);
+            await this.sendError({
+                authTimeout: true
+            }, true);
+        }, 60000);
     }
 
     get ip(): string {
