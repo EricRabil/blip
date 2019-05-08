@@ -4,6 +4,7 @@ import express from "express";
 import cws from "@clusterws/cws";
 import log from "./log";
 import ServiceSocket from "./ws/ServiceSocket";
+import { startCLI } from "./util/cli";
 
 export const {
     SERVER_PORT: port,
@@ -27,4 +28,8 @@ websocketServer.on('connection', (socket) => {
 
 httpServer.listen(port, () => {
     log.info(`server is listening on port ${port}`);
+
+    startCLI({
+        ServiceSocket
+    })
 });
