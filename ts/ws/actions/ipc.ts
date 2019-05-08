@@ -2,6 +2,9 @@ import { Action } from ".";
 import { IPCMessage } from "../../payloads";
 import ServiceSocket from "../ServiceSocket";
 
+/**
+ * Intent for sending data to another connected service
+ */
 export const IPCAction: Action = {
     intent: "ipc",
     handler: async (service, { to, message, nonce }: IPCMessage) => {

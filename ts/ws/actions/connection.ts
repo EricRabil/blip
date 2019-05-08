@@ -5,6 +5,9 @@ import log from "../../log";
 import { USE_PSK, PSK } from "../..";
 import { tokenExists, generateToken, checkToken } from "../../tokens";
 
+/**
+ * Intent for identifying a socket connection
+ */
 export const IdentifyAction: Action = {
     intent: "connection/identify",
     handler: async (socket, {name, baseMetrics, psk, token}: Identify) => {
