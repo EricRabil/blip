@@ -14,7 +14,7 @@ export interface Action {
  * Magic object generated at runtime, represents all actions from all files in this folder
  */
 export const Actions: {[key: string]: Action} = fs.readdirSync(__dirname)
-    .filter(file => (file.endsWith(".js")) && (file.split(".").length === 2) && (file !== "index.ts"))
+    .filter(file => (file.endsWith(".js") || file.endsWith(".ts")) && (file.split(".").length === 2) && (file !== "index.ts"))
     .map(file => path.resolve(__dirname, file))
     .map(file => require(file))
     .map(file => Object.values(file))

@@ -30,3 +30,17 @@ export const IPCAction: Action = {
         });
     }
 }
+
+export const IPCDiscover: Action = {
+    intent: "ipc/discover",
+    handler: async (service) => {
+        const services = ServiceSocket.sockets.map(s => s.name);
+
+        await service.send({
+            i: "ipc/discover",
+            d: {
+                services
+            }
+        });
+    }
+}

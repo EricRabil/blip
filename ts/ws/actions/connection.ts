@@ -2,7 +2,7 @@ import { Action } from ".";
 import { Identify } from "../../payloads";
 import ServiceSocket from "../ServiceSocket";
 import log from "../../log";
-import { USE_PSK, PSK } from "../..";
+import { USE_PSK, PSK, USE_TOKEN } from "../..";
 import { tokenExists, generateToken, checkToken } from "../../tokens";
 
 /**
@@ -30,31 +30,37 @@ export const IdentifyAction: Action = {
         }
 
         // check psk
-        if (USE_PSK && (PSK !== psk)) {
-            log.info(`socket failed psk auth for service "${name}"`);
-            await socket.sendError({
-                incorrectPSK: true
-            }, true);
-            return;
+        if (USE_PSK === true) {
+            if (PSK !== psk) {
+                log.info(`socket failed psk auth for service "${name}"`);
+                await socket.sendError({
+                    incorrectPSK: true
+                }, true);
+                return;
+            }
         }
 
         // check or generate token
         let newToken: string;
-        if (await tokenExists(name)) {
-            if (!(await checkToken(name, token!))) {
-                log.info(`socket failed token auth for service "${name}"`)
-                await socket.sendError({
-                    incorrectToken: true
-                }, true);
-                return;
+        if (USE_TOKEN === true) {
+            if (await tokenExists(name)) {
+                if (!(await checkToken(name, token!))) {
+                    log.info(`socket failed token auth for service "${name}"`)
+                    await socket.sendError({
+                        incorrectToken: true
+                    }, true);
+                    return;
+                }
+            } else {
+                newToken = await generateToken(name);
             }
-        } else {
-            newToken = await generateToken(name);
         }
 
         socket.name = name;
         socket.latestMetrics = baseMetrics;
         socket.identified = true;
+
+        log.debug(`${name} has been identified. welcome to the club`)
 
         await socket.send({
             i: 'connection/connected',

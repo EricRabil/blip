@@ -6,9 +6,7 @@ import ServiceSocket from "../ServiceSocket";
 function validateMetrics(metrics: any): metrics is Metrics {
     return typeof metrics === "object"
         && "memory" in metrics && typeof metrics["memory"] === "number"
-        && "cpu" in metrics && typeof metrics["cpu"] === "number"
-        && "url" in metrics
-        && "location" in metrics
+        && "cpu" in metrics && typeof metrics["cpu"] === "number";
 }
 
 /**
@@ -18,7 +16,7 @@ export const MetricAction: Action = {
     intent: "metrics/update",
     handler: async (socket, metrics: Metrics) => {
         if (!validateMetrics(metrics)) {
-            log.warn(`socket sent malformed metrics [service-name=${socket.name}]`);
+            log.warn(`socket sent malformed metrics [service-name=${socket.name}] ${JSON.stringify(metrics)}`);
             await socket.sendError({
                 metrics: true,
                 message: "invalid metrics payload"

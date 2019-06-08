@@ -1,38 +1,18 @@
 import dotenv from "dotenv";
-import http from "http";
-import express from "express";
 import path from "path";
-import { WebSocketServer } from "@clusterws/cws";
-import log from "./log";
-import ServiceSocket from "./ws/ServiceSocket";
-import { startCLI } from "./util/cli";
 
 export const {
-    SERVER_PORT: port,
+    SERVER_PORT,
     PSK,
     USE_PSK,
+    USE_TOKEN,
     TOKEN_REGISTRY_PATH,
     STRICT
 }: {
     SERVER_PORT: number,
     PSK: string,
     USE_PSK: boolean,
+    USE_TOKEN: boolean,
     TOKEN_REGISTRY_PATH: string,
     STRICT: boolean
 } = dotenv.config({path: path.resolve(__dirname, "..", ".env")}).parsed as any;
-
-const app = express();
-const httpServer = http.createServer(app);
-const websocketServer = new WebSocketServer({ server: httpServer });
-
-websocketServer.on('connection', (socket) => {
-    new ServiceSocket(socket);
-});
-
-httpServer.listen(port, () => {
-    log.info(`server is listening on port ${port}`);
-
-    startCLI({
-        ServiceSocket
-    })
-});

@@ -1,61 +1,33 @@
 import "mocha";
-import { port, PSK } from "../ts";
-import WebSocket from "ws";
+import { createBasicServer } from "../ts/server";
+import { SocketClient } from "../ts/client/SocketClient";
 
-describe("Sockets", () => {
-  return new Promise(async (resolve, reject) => {
-    let previousUsage = process.cpuUsage();
-    async function metrics() {
-      const memory =
-        Math.round(
-          (Object.values(process.memoryUsage()).reduce((a, c) => a + c, 0) /
-            1024 /
-            1024) *
-            100
-        ) / 100;
-      const cpu = (previousUsage = process.cpuUsage(previousUsage));
-      const extraStat = "extra stat!";
+describe("Blip Infrastructure", async function () {
+  await createBasicServer();
 
-      return {
-        memory,
-        cpu,
-        extraStat
-      };
+  const client1 = new SocketClient({
+    name: "client1",
+    host: "127.0.0.1",
+    port: 8352
+  });
+
+  const client2 = new SocketClient({
+    name: "client2",
+    host: "127.0.0.1",
+    port: 8352
+  });
+
+  await Promise.all([client1.connect(), client2.connect()]);
+
+  client1.ipc("client2", "hey bitch!", {
+    expectResponse: true,
+    nonce: "bitch-chat"
+  }).then(console.log);
+
+  client2.on("ipc", async msg => {
+    if (msg.from !== "client1") return;
+    if (msg.message === "hey bitch!") {
+      await msg.reply("hey girl!");
     }
-
-    const connection = new WebSocket(`ws://127.0.0.1:${port}`);
-
-    const identifyPayload = {
-      i: "connection/identify",
-      d: {
-        name: process.env.NAME,
-        baseMetrics: await metrics(),
-        psk: PSK,
-        token: process.env.TOKEN
-      }
-    };
-
-    connection.on("open", () => {
-      connection.send(JSON.stringify(identifyPayload));
-
-      connection.on("message", msg => {
-        const data = JSON.parse(msg.toString());
-
-        const { i: intent, d: payload } = data;
-
-        switch (intent) {
-          case "connection/connected":
-            if (payload.token) console.log(`New token is ${payload.token}`);
-            setInterval(async () => {
-              connection.send(JSON.stringify(await metrics()));
-            }, 10000);
-            break;
-          case "ipc":
-            const { message, from } = payload;
-            console.log(`IPC from ${from}: ${message}`);
-            break;
-        }
-      });
-    });
   });
 });
