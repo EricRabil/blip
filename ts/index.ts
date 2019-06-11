@@ -1,18 +1,36 @@
-import dotenv from "dotenv";
-import path from "path";
+import { BlipConfigurator, BlipConfig } from "./config";
+import { SocketClient } from "./client/SocketClient";
+import { createBasicServer } from "./server";
 
-export const {
-    SERVER_PORT,
-    PSK,
-    USE_PSK,
-    USE_TOKEN,
-    TOKEN_REGISTRY_PATH,
-    STRICT
-}: {
-    SERVER_PORT: number,
-    PSK: string,
-    USE_PSK: boolean,
-    USE_TOKEN: boolean,
-    TOKEN_REGISTRY_PATH: string,
-    STRICT: boolean
-} = dotenv.config({path: path.resolve(__dirname, "..", ".env")}).parsed as any;
+export async function blip(rawConfig?: BlipConfig<true>): Promise<any>
+export async function blip(rawConfig?: BlipConfig<false>): Promise<any>
+export async function blip(rawConfig?: BlipConfig<true> | BlipConfig<false>): Promise<any> {
+    let config: BlipConfig<boolean> = BlipConfigurator.validateBlip(rawConfig);
+
+    if (BlipConfigurator.Internal.isClientConfig(config)) {
+        // run client mode
+        const token = config.tokenCache ? config.tokenCache[config.host!] : undefined;
+        
+        const socketClient = new SocketClient({
+            name: config.client!.name,
+            host: config.host!,
+            port: config.port!,
+            secure: config.secure,
+            token,
+            key: config.psk as any
+        });
+
+        // updates and saves new token if sent by server
+        socketClient.on("newToken", (token: string) => {
+            (config!.tokenCache || (config!.tokenCache = {}))[config!.host!] = token;
+            BlipConfigurator.saveBlip(config!, true);
+        });
+
+        return socketClient.connect().then(() => socketClient);
+    } else {
+        // run server mode
+        return createBasicServer(config);
+    }
+}
+
+export default blip;

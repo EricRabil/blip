@@ -19,10 +19,6 @@ export interface IPCMessage {
  * @intent stat
  */
 export interface Metrics {
-    // in megabytes
-    memory: number;
-    // in percent
-    cpu: number;
     [key: string]: string | number | null;
 }
 

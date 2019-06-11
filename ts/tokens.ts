@@ -1,9 +1,7 @@
 import bcrypt from "bcrypt";
 import { randomBytes } from "crypto";
-import fs from "fs-extra";
-import path from "path";
 import { promisify } from "util";
-import { TOKEN_REGISTRY_PATH } from ".";
+import { BlipConfigurator } from "./config";
 
 namespace TokenUtils {
     export function generateToken(): Promise<string> {
@@ -16,28 +14,14 @@ namespace TokenUtils {
     }
 }
 
-interface TokenRegistry {
-    [serviceName: string]: string;
-}
-
-const DataPath = path.resolve(__dirname, "data.json");
-
-async function loadTokenRegistry(): Promise<TokenRegistry> {
-    if (!await fs.pathExists(TOKEN_REGISTRY_PATH || DataPath)) await fs.writeJSON(TOKEN_REGISTRY_PATH || DataPath, {})
-    return fs.readJSON(TOKEN_REGISTRY_PATH || DataPath);
-}
-
-async function saveTokenRegistry(registry: TokenRegistry): Promise<void> {
-    return fs.writeJSON(TOKEN_REGISTRY_PATH || DataPath, registry);
-}
-
 /**
  * Generate a token for a service.
  * 
  * A service may not have more than one token, and the existing token must be deleted before a new one can be generated.
  */
 export async function generateToken(service: string): Promise<string> {
-    const registry = await loadTokenRegistry();
+    const config = await BlipConfigurator.loadBlip(true, true);
+    const registry = config.tokenCache || (config.tokenCache = {});
 
     // This is a security measure to prevent a service masquerade. Manually remove the service from the file or run a CLI script.
     // You can also make a request using the old token to un-pair, but typically the old token is not accessible in this situation.
@@ -50,7 +34,7 @@ export async function generateToken(service: string): Promise<string> {
 
     registry[service] = encrypted;
 
-    await saveTokenRegistry(registry);
+    await BlipConfigurator.saveBlip(config, true);
 
     return token;
 }
@@ -61,7 +45,9 @@ export async function generateToken(service: string): Promise<string> {
  * You must provide the old token to delete a token using normal APIs.
  */
 export async function deleteToken(service: string, token: string): Promise<void> {
-    const registry = await loadTokenRegistry();
+    const config = await BlipConfigurator.loadBlip(true, true);
+    const registry = config.tokenCache || (config.tokenCache = {});
+
     const match = await checkToken(service, token);
 
     // Old token must be provided to delete from the registry
@@ -71,14 +57,15 @@ export async function deleteToken(service: string, token: string): Promise<void>
 
     delete registry[service];
 
-    await saveTokenRegistry(registry);
+    await BlipConfigurator.saveBlip(config, true);
 }
 
 /**
  * Check whether a token is valid for a given service
  */
 export async function checkToken(service: string, token: string): Promise<boolean> {
-    const registry = await loadTokenRegistry();
+    const config = await BlipConfigurator.loadBlip(true, true);
+    const registry = config.tokenCache || (config.tokenCache = {});
 
     let encrypted: string;
     if (!(encrypted = registry[service])) {
@@ -92,7 +79,8 @@ export async function checkToken(service: string, token: string): Promise<boolea
  * Check whether a service is currently linked with Blip
  */
 export async function tokenExists(service: string): Promise<boolean> {
-    const registry = await loadTokenRegistry();
+    const config = await BlipConfigurator.loadBlip(true, true);
+    const registry = config.tokenCache || (config.tokenCache = {});
 
     return !!registry[service];
 }

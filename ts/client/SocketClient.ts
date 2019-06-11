@@ -2,6 +2,7 @@ import { EventEmitter } from "events";
 import WebSocket from "ws";
 import uuid = require("uuid");
 import log from "../log";
+import { BlipConfigurator } from "../config";
 
 export interface SocketClientOptions {
   name: string;
@@ -30,6 +31,7 @@ export class SocketClient extends EventEmitter {
   public readonly serviceName: string;
   private token: string | null;
   private key: string | null;
+  private host: string;
   private metricsPopulator?: () => { [key: string]: any };
 
   private connection: WebSocket;
@@ -53,6 +55,7 @@ export class SocketClient extends EventEmitter {
     super();
     this.uri = `ws${secure ? "s" : ""}://${host}:${port}`;
     this.serviceName = name;
+    this.host = host;
     this.token = token || null;
     this.key = key || null;
     this.metricsPopulator = customMetrics;
@@ -90,19 +93,9 @@ export class SocketClient extends EventEmitter {
    * @param message the message to send
    * @param options the message options (regarding response delivery)
    */
-  public ipc(to: string, message: string, options?: { expectResponse?: boolean, nonce?: string }): Promise<any> {
+  public ipc(to: string, message: string, nonce?: string): Promise<any> {
     return new Promise(async (resolve, reject) => {
-      let expectResponse = false, nonce: string | null = null;
-      if (options) {
-        const { expectResponse: response, nonce: str } = options;
-        if (typeof response === "boolean") expectResponse = response;
-        if (typeof str === "string") nonce = str;
-      }
-
-      // auto-generate nonce if none supplied
-      if (expectResponse && !nonce) {
-        nonce = uuid.v1();
-      }
+      nonce = nonce || uuid.v4();
 
       await this.send({
         i: "ipc",
@@ -113,13 +106,9 @@ export class SocketClient extends EventEmitter {
         }
       });
 
-      // Stop function execution and wait for an IPC response
-      if (expectResponse && nonce) {
-        return this.pendingIPC[nonce] = { resolve, reject };
-      }
-
-      // Immediately resolve as we are not expecting a response
-      return resolve();
+      const timeout = setTimeout(resolve, 10000);
+      const responded = () => { resolve(); clearTimeout(timeout) };
+      return this.pendingIPC[nonce] = { resolve: responded, reject };
     });
   }
 
@@ -133,9 +122,12 @@ export class SocketClient extends EventEmitter {
     switch (intent) {
       case "connection/connected":
         // The server can issue a new token whenever it wants, but typically only issues the token on first connection with any given service name
-        if (payload.token) {
-          this.token = payload.token;
-          this.emit("newToken", this.token);
+        if (payload.newToken) {
+          const config = await BlipConfigurator.loadBlip(true);
+          const tokenCache = config.tokenCache || (config.tokenCache = {});
+          
+          tokenCache[this.host] = payload.newToken;
+          await BlipConfigurator.saveBlip(config, true);
         }
         this.startMetrics();
         if (this.connectCallback) {
@@ -154,7 +146,7 @@ export class SocketClient extends EventEmitter {
         this.emit("ipc", {
           from, message, nonce, reply: async (msg: string) => {
             if (!nonce) throw new Error("Cannot reply to a non-nonce message");
-            return this.ipc(from, msg, { nonce });
+            return this.ipc(from, msg, nonce);
           }
         });
         break;

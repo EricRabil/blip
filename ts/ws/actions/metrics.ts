@@ -5,8 +5,6 @@ import ServiceSocket from "../ServiceSocket";
 
 function validateMetrics(metrics: any): metrics is Metrics {
     return typeof metrics === "object"
-        && "memory" in metrics && typeof metrics["memory"] === "number"
-        && "cpu" in metrics && typeof metrics["cpu"] === "number";
 }
 
 /**

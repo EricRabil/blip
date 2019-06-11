@@ -2,8 +2,8 @@ import { WebSocket } from "@clusterws/cws";
 import { Actions, Action, ActionHandler } from "./actions";
 import log from "../log";
 import { Metrics } from "../payloads";
-import { STRICT } from "..";
 import { IdentifyAction } from "./actions/connection";
+import { BlipConfig } from "../config";
 
 function validatePayload(payload: any): payload is SocketPayload {
     return typeof payload === "object"
@@ -30,7 +30,7 @@ export default class ServiceSocket {
     identified: boolean = false;
     latestMetrics: Metrics;
 
-    constructor(public socket: WebSocket) {
+    constructor(public socket: WebSocket, public readonly config: BlipConfig<true>) {
         if (ServiceSocket.sockets.find(sock => sock.socket === socket)) throw new Error("Only one wrapper per socket is permitted.");
         ServiceSocket.sockets.push(this);
         socket.on("message", message => this.receive(message as string));
@@ -57,8 +57,7 @@ export default class ServiceSocket {
         });
     }
 
-    public sendError(d: any, forceClose: boolean = false): Promise<void> {
-        const close = forceClose || STRICT;
+    public sendError(d: any, close: boolean = false): Promise<void> {
         return this.send({
             i: "debug/error",
             d: {

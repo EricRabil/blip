@@ -2,7 +2,6 @@ import { Action } from ".";
 import { Identify } from "../../payloads";
 import ServiceSocket from "../ServiceSocket";
 import log from "../../log";
-import { USE_PSK, PSK, USE_TOKEN } from "../..";
 import { tokenExists, generateToken, checkToken } from "../../tokens";
 
 /**
@@ -30,8 +29,8 @@ export const IdentifyAction: Action = {
         }
 
         // check psk
-        if (USE_PSK === true) {
-            if (PSK !== psk) {
+        if (socket.config.server && socket.config.server.pskEnabled === true) {
+            if (socket.config.psk !== psk) {
                 log.info(`socket failed psk auth for service "${name}"`);
                 await socket.sendError({
                     incorrectPSK: true
@@ -42,7 +41,7 @@ export const IdentifyAction: Action = {
 
         // check or generate token
         let newToken: string;
-        if (USE_TOKEN === true) {
+        if (socket.config.server && socket.config.server.tokenEnabled === true) {
             if (await tokenExists(name)) {
                 if (!(await checkToken(name, token!))) {
                     log.info(`socket failed token auth for service "${name}"`)

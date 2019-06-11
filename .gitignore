@@ -63,3 +63,5 @@ typings/
 # Compiled files
 js/
 ts/data.json
+
+blip*.json

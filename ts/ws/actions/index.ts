@@ -19,4 +19,4 @@ export const Actions: {[key: string]: Action} = fs.readdirSync(__dirname)
     .map(file => require(file))
     .map(file => Object.values(file))
     .reduce((arr, c) => { arr = arr.concat(c); return arr; }, [] as any[])
-    .reduce((obj, c) => { obj[c.intent] = c; return obj; }, {} as {[key: string]: any});
+    .reduce((obj: any, c: any) => { obj[c.intent] = c; return obj; }, {} as {[key: string]: any}) as any;
