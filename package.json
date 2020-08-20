@@ -9,7 +9,7 @@
   "private": false,
   "dependencies": {
     "@clusterws/cws": "^0.12.2",
-    "bcrypt": "^3.0.6",
+    "bcrypt": "^5.0.0",
     "chalk": "^2.4.2",
     "deepmerge": "^3.2.0",
     "dotenv": "^7.0.0",
